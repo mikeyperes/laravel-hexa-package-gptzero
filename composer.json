@@ -1,0 +1,20 @@
+{
+    "name": "hexawebsystems/laravel-hexa-package-gptzero",
+    "description": "GPTZero — AI content detection with per-sentence probability scoring",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "hexa_package_gptzero\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "hexa_package_gptzero\\Providers\\GptZeroServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
