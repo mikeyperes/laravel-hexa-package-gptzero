@@ -110,16 +110,33 @@ class GptZeroService
     }
 
     /**
-     * Test the API connection with a simple request.
+     * Test the API connection by verifying the API key is accepted.
      *
      * @return array{success: bool, message: string}
      */
     public function testConnection(): array
     {
-        $result = $this->detect('The quick brown fox jumps over the lazy dog. This is a simple test sentence written by a human.');
-        if ($result['success']) {
-            return ['success' => true, 'message' => 'GPTZero API connected. AI probability: ' . round(($result['data']['completely_generated_prob'] ?? 0) * 100) . '%'];
+        $apiKey = $this->getApiKey();
+        if (empty($apiKey)) {
+            return ['success' => false, 'message' => 'GPTZero API key not configured.'];
         }
-        return $result;
+
+        try {
+            $response = Http::withHeaders([
+                'x-api-key' => $apiKey,
+                'Content-Type' => 'application/json',
+            ])->timeout(15)->post(config('gptzero.api_url', 'https://api.gptzero.me/v2/predict/text'), [
+                'document' => 'Test connection.',
+            ]);
+
+            if ($response->successful()) {
+                return ['success' => true, 'message' => 'GPTZero API connected successfully.'];
+            }
+
+            $error = $response->json('error') ?? $response->body();
+            return ['success' => false, 'message' => 'GPTZero API error (' . $response->status() . '): ' . (is_string($error) ? $error : json_encode($error))];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'GPTZero connection failed: ' . $e->getMessage()];
+        }
     }
 }
