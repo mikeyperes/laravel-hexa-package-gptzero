@@ -10,7 +10,7 @@
         <p class="text-sm text-gray-500 mb-4">Detect AI-generated content with per-sentence probability scoring.</p>
 
         <div class="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 mb-4">
-            <strong>Setup:</strong> Get your API key at <a href="https://gptzero.me/dashboard" target="_blank" class="underline">gptzero.me/dashboard</a>. Free tier: 10,000 words/month.
+            <strong>Setup:</strong> Get your API key at <a href="https://gptzero.me/dashboard" target="_blank" class="underline inline-flex items-center gap-1">gptzero.me/dashboard <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>. Free tier: 10,000 words/month.
         </div>
 
         <div class="space-y-4">
