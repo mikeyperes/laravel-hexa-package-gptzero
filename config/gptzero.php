@@ -1,9 +1,9 @@
 <?php
 
 return [
-    'version' => '1.0.1',
+    'version' => '1.0.2',
     'enabled' => true,
-    'api_url' => 'https://api.gptzero.me/v2/predict',
+    'api_url' => 'https://api.gptzero.me/v2/predict/text',
     'setting_keys' => [
         'api_key' => 'gptzero_api_key',
         'enabled' => 'gptzero_enabled',
