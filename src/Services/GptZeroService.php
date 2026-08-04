@@ -2,8 +2,10 @@
 
 namespace hexa_package_gptzero\Services;
 
+use hexa_core\AI\Contracts\AiTransactionRecorder;
 use hexa_core\Models\Setting;
 use hexa_core\Services\GenericService;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -83,12 +85,7 @@ class GptZeroService
         }
 
         try {
-            $response = Http::withHeaders([
-                'x-api-key' => $apiKey,
-                'Content-Type' => 'application/json',
-            ])->timeout(30)->post(config('gptzero.api_url', 'https://api.gptzero.me/v2/predict/text'), [
-                'document' => $text,
-            ]);
+            $response = $this->requestDetection($apiKey, $text, 30, 'detector.scan');
 
             if (!$response->successful()) {
                 $error = $response->json('error') ?? $response->body();
@@ -127,12 +124,7 @@ class GptZeroService
         }
 
         try {
-            $response = Http::withHeaders([
-                'x-api-key' => $apiKey,
-                'Content-Type' => 'application/json',
-            ])->timeout(15)->post(config('gptzero.api_url', 'https://api.gptzero.me/v2/predict/text'), [
-                'document' => 'Test connection.',
-            ]);
+            $response = $this->requestDetection($apiKey, 'Test connection.', 15, 'detector.connection_test');
 
             if ($response->successful()) {
                 return ['success' => true, 'message' => 'GPTZero API connected successfully.'];
@@ -142,6 +134,51 @@ class GptZeroService
             return ['success' => false, 'message' => 'GPTZero API error (' . $response->status() . '): ' . (is_string($error) ? $error : json_encode($error))];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'GPTZero connection failed: ' . $e->getMessage()];
+        }
+    }
+
+    private function requestDetection(string $apiKey, string $text, int $timeout, string $operation): Response
+    {
+        $endpoint = (string) config('gptzero.api_url', 'https://api.gptzero.me/v2/predict/text');
+        $units = ['characters' => mb_strlen($text), 'words' => str_word_count($text)];
+        $span = app(AiTransactionRecorder::class)->start([
+            'provider' => 'gptzero',
+            'package' => 'hexawebsystems/laravel-hexa-package-gptzero',
+            'model' => 'gptzero-ai-detector-v2',
+            'operation' => $operation,
+            'endpoint' => parse_url($endpoint, PHP_URL_PATH) ?: '/v2/predict/text',
+            'request_metadata' => array_merge($units, ['timeout_seconds' => $timeout]),
+        ]);
+
+        try {
+            $response = Http::withHeaders([
+                'x-api-key' => $apiKey,
+                'Content-Type' => 'application/json',
+            ])->timeout($timeout)->post($endpoint, ['document' => $text]);
+
+            $attributes = [
+                'provider_request_id' => $response->header('x-request-id'),
+                'http_status' => $response->status(),
+                'usage' => $units,
+                'response_metadata' => [
+                    'document_count' => count((array) $response->json('documents', [])),
+                    'predicted_class' => $response->json('documents.0.predicted_class'),
+                ],
+            ];
+
+            if ($response->successful()) {
+                $span->succeed($attributes);
+            } else {
+                $span->fail((string) ($response->json('error') ?? 'GPTZero request failed.'), array_merge($attributes, [
+                    'error_type' => 'gptzero_http_error',
+                ]));
+            }
+
+            return $response;
+        } catch (\Throwable $e) {
+            $span->fail($e, ['usage' => $units]);
+
+            throw $e;
         }
     }
 }
