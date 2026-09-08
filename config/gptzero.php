@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'version' => '2.0.7',
+    'version' => '2.0.8',
     'enabled' => true,
     'api_url' => 'https://api.gptzero.me/v2/predict/text',
     'setting_keys' => [
